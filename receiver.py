@@ -1,42 +1,40 @@
-import paho.mqtt.client as mqtt
+from paho.mqtt import client as mqtt_client
+from random import randint
+
+
 
 
 def on_connect(client, userdata, flags, rc):
-    print('Connected to ' + str(rc))
-    client.subscribe("topic/test")
-    client.connection_flag = True
 
-
-def on_disconnect(client, userdata, flags, rc):
-    if rc != 0:
-        print('Unexpected disconnection.')
+    if rc == 0:
+        print("Connected to MQTT Broker!")
     else:
-        print('Disconnected.')
-    client.unsubscribe("topic/test")
-    client.connection_flag = False
+        print("Failed to connect, return code %d\n", rc)
 
 
 def on_message(client, userdata, msg):
-    if msg.payload.decode().lower() == "Stop":
-        client.disconnect()
+
+    print(f"Received `{msg.payload.decode()}` from `{msg.topic}` topic")
 
 
-ip_address = input('What is the ip address of the mqtt broker you want to connect to? ')
-
-client = mqtt.Client()
-client.connected = False
-client.connect(ip_address, 1883, 60)
-
-client.on_connect = on_connect
-client.on_disconnect = on_disconnect
-client.on_message = on_message
-
-client.loop_start()
-
-while client.connected:
-    pass
-
-client.disconnect()
-client.loop_stop()
 
 
+if __name__ == '__main__':
+
+    broker = 'localhost'
+    port = 1883
+    topic = "object_detection/balls"
+    client_id = f'object_detection_t_{randint(1, 10000)}'
+
+    username = 'receiver'
+    password = 'password'
+
+    client = mqtt_client.Client(client_id)
+    client.username_pw_set(username, password)
+
+    client.on_connect = on_connect
+    client.on_message = on_message
+
+    client.connect(broker, port)
+    client.subscribe(topic)
+    client.loop_forever()
